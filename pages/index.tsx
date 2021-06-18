@@ -16,6 +16,9 @@ function Index() {
     if (title === '') return
 
     setReviews([...reviews, { id: id++, title, rating }])
+
+    setTitle('')
+    setRating(0)
   }
 
   return (
@@ -40,7 +43,7 @@ function Index() {
               <div className={styles.column}>
                 <span className={styles.title}>{review.title}</span>
               </div>
-              <span>{review.rating}/10</span>
+              <span>{review.rating} / 10</span>
             </li>
           ))}
         </ul>
@@ -57,7 +60,7 @@ function Index() {
             autoComplete='off'
           />
           <label className={styles.label} htmlFor='rating'>
-            Rating
+            Rating ({rating} / 10)
           </label>
           <input
             value={rating}
