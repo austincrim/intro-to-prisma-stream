@@ -1,37 +1,21 @@
 import * as React from 'react'
-import { prisma } from '../lib/prisma'
-import type { GetServerSideProps } from 'next'
-import type { Review } from '@prisma/client'
 import styles from '../styles/index.module.css'
-import { useRouter } from 'next/dist/client/router'
 
-function Index({ reviews }: { reviews: Review[] }) {
+let id = 0
+
+function Index() {
+  const [reviews, setReviews] = React.useState([
+    { id: id++, title: 'Babe: Pig in the City', rating: 6 }
+  ])
   const [title, setTitle] = React.useState('')
-  const [musings, setMusings] = React.useState('')
   const [rating, setRating] = React.useState(0)
-  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     if (title === '') return
 
-    const response = await fetch('/api/reviews', {
-      body: JSON.stringify({ title, rating, musings }),
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-
-    if (response.ok) {
-      setTitle('')
-      setMusings('')
-      setRating(0)
-      router.push('/')
-    } else {
-      alert('error creating movie!')
-    }
+    setReviews([...reviews, { id: id++, title, rating }])
   }
 
   return (
@@ -44,19 +28,8 @@ function Index({ reviews }: { reviews: Review[] }) {
           {reviews.map((review) => (
             <li key={review.id} className={styles.review}>
               <button
-                onClick={async () => {
-                  const response = await fetch('/api/reviews', {
-                    body: JSON.stringify({ id: review.id }),
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    method: 'DELETE'
-                  })
-                  if (response.ok) {
-                    router.push('/')
-                  } else {
-                    alert('error deleting movie!')
-                  }
+                onClick={() => {
+                  setReviews(reviews.filter((r) => r.id !== review.id))
                 }}
                 aria-label={`delete review ${review.title}`}
                 className={styles.deleteButton}
@@ -66,9 +39,6 @@ function Index({ reviews }: { reviews: Review[] }) {
               </button>
               <div className={styles.column}>
                 <span className={styles.title}>{review.title}</span>
-                {review.musings && (
-                  <span className={styles.musings}>{review.musings}</span>
-                )}
               </div>
               <span>{review.rating}/10</span>
             </li>
@@ -85,15 +55,6 @@ function Index({ reviews }: { reviews: Review[] }) {
             type='text'
             id='title'
             autoComplete='off'
-          />
-          <label className={styles.label} htmlFor='musings'>
-            Musings
-          </label>
-          <textarea
-            className={styles.textarea}
-            value={musings}
-            onChange={(e) => setMusings(e.currentTarget.value)}
-            id='musings'
           />
           <label className={styles.label} htmlFor='rating'>
             Rating
@@ -114,16 +75,6 @@ function Index({ reviews }: { reviews: Review[] }) {
       </main>
     </div>
   )
-}
-
-export const getServerSideProps: GetServerSideProps = async () => {
-  const reviews = await prisma.review.findMany()
-
-  return {
-    props: {
-      reviews
-    }
-  }
 }
 
 export default Index
