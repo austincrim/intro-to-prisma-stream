@@ -11,8 +11,16 @@ const handler: NextApiHandler = async (req, res) => {
         musings
       }
     })
-
     res.json(newReview)
+  } else if (req.method === 'DELETE') {
+    const { id } = req.body
+    const deletedReview = await prisma.review.delete({
+      where: {
+        id
+      }
+    })
+
+    res.json(deletedReview)
   }
 }
 

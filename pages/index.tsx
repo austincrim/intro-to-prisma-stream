@@ -3,30 +3,35 @@ import { prisma } from '../lib/prisma'
 import type { GetServerSideProps } from 'next'
 import type { Review } from '@prisma/client'
 import styles from '../styles/index.module.css'
+import { useRouter } from 'next/dist/client/router'
 
 function Index({ reviews }: { reviews: Review[] }) {
   const [title, setTitle] = React.useState('')
   const [musings, setMusings] = React.useState('')
   const [rating, setRating] = React.useState(0)
+  const router = useRouter()
 
-  async function handleSubmit(e: React.SyntheticEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     if (title === '') return
 
     const response = await fetch('/api/reviews', {
-      body: JSON.stringify({ title, rating }),
+      body: JSON.stringify({ title, rating, musings }),
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       }
     })
 
-    const newReview = await response.json()
-    reviews.push(newReview)
-
-    setTitle('')
-    setRating(0)
+    if (response.ok) {
+      setTitle('')
+      setMusings('')
+      setRating(0)
+      router.push('/')
+    } else {
+      alert('error creating movie!')
+    }
   }
 
   return (
@@ -38,9 +43,32 @@ function Index({ reviews }: { reviews: Review[] }) {
         <ul className={styles.reviewList}>
           {reviews.map((review) => (
             <li key={review.id} className={styles.review}>
+              <button
+                onClick={async () => {
+                  const response = await fetch('/api/reviews', {
+                    body: JSON.stringify({ id: review.id }),
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    method: 'DELETE'
+                  })
+                  if (response.ok) {
+                    router.push('/')
+                  } else {
+                    alert('error deleting movie!')
+                  }
+                }}
+                aria-label={`delete review ${review.title}`}
+                className={styles.deleteButton}
+                type='button'
+              >
+                &times;
+              </button>
               <div className={styles.column}>
                 <span className={styles.title}>{review.title}</span>
-                <span className={styles.musings}>{review.musings}</span>
+                {review.musings && (
+                  <span className={styles.musings}>{review.musings}</span>
+                )}
               </div>
               <span>{review.rating}/10</span>
             </li>
@@ -88,8 +116,6 @@ function Index({ reviews }: { reviews: Review[] }) {
   )
 }
 
-export default Index
-
 export const getServerSideProps: GetServerSideProps = async () => {
   const reviews = await prisma.review.findMany()
 
@@ -99,3 +125,5 @@ export const getServerSideProps: GetServerSideProps = async () => {
     }
   }
 }
+
+export default Index
